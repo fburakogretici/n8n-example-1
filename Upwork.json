@@ -1,0 +1,316 @@
+{
+  "name": "Upwork",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "salon-geri-bildirim",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d672225d-8bb6-4a39-8e88-13a5004b0361",
+      "name": "Webhook",
+      "webhookId": "782f553e-fea7-4793-b2bf-1c2bd6be1109"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        144,
+        208
+      ],
+      "id": "4640133c-9681-4403-8210-26d65be88401",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "Z3Xstudzn3cCcVT1",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a customer relations assistant for a beauty salon using Aurox Software.\nTask: Analyze the following customer feedback and respond ONLY in JSON format, without any extra text.\n\nCustomer Feedback: \n{{ $json.body.feedback_text }}\n\nOutput Format Must Be Exactly Like This:\n{\n  \"duygu\": \"positive\" or \"negative\" or \"neutral\",\n  \"kategori\": \"wait_time\", \"staff\", \"hygiene\", \"price\" etc. (choose the most fitting),\n  \"ozet_sorun\": \"Summarize the customer's issue in maximum 5 words in English\",\n  \"mudahale_gerekli_mi\": true or false (Must be true if the feedback is negative)\n}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5d366b54-7780-43fe-86a9-65929ba8c9f3",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiResponse = JSON.parse($input.first().json.text);\nreturn aiResponse;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "aba97bac-4796-479e-a9aa-9edb30ea6dad",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6a920256-e416-40c0-ac2e-67d77aae500e",
+              "leftValue": "={{ $json.mudahale_gerekli_mi }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        768,
+        0
+      ],
+      "id": "9b8a9114-f64e-44f0-8ff5-98d739694f20",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "7992895162",
+        "text": "=🚨 **Urgent Customer Intervention Required!** 🚨\n\n👤 **Customer:** {{ $('Webhook').item.json.body.customer_name }}\n📞 **Phone:** {{ $('Webhook').item.json.body.phone }}\n\n🤖 **AI Analysis:**\n📌 **Issue Summary:** {{ $json.ozet_sorun }}\n🏷 **Category:** {{ $json.kategori }}\n💬 **Original Message:** \"{{ $('Webhook').item.json.body.feedback_text }}\"\n\nPlease contact the customer immediately.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        976,
+        -96
+      ],
+      "id": "b6619dff-0973-4f8c-bc1e-7f5a4e6966d7",
+      "name": "Send a text message",
+      "webhookId": "f18f9f2a-b2f5-479c-b19c-06c936e4195c",
+      "credentials": {
+        "telegramApi": {
+          "id": "dfrQtPXXP3Snhupg",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/12GSWrf_ifVCK2U0MBMjoIsAqYFos-q5elQxhGmRZlXw/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Aurox_Feedback",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12GSWrf_ifVCK2U0MBMjoIsAqYFos-q5elQxhGmRZlXw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer": "={{ $('Webhook').item.json.body.customer_name }}",
+            "Telephone": "={{ $('Webhook').item.json.body.phone }}",
+            "Branch": "={{ $('Webhook').item.json.body.salon_branch }}",
+            "Original Message": "={{ $('Webhook').item.json.body.feedback_text }}",
+            "Category": "={{ $('Code in JavaScript').item.json.kategori }}",
+            "Summary": "={{ $('Code in JavaScript').item.json.ozet_sorun }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Customer",
+              "displayName": "Customer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Telephone",
+              "displayName": "Telephone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Branch",
+              "displayName": "Branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Original Message",
+              "displayName": "Original Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        96
+      ],
+      "id": "8d649761-aad0-4696-b28a-fb90a07666fb",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Dd7fdg74A6Xa2XGK",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "2IUr3yxVXwuVbSZi"
+  },
+  "versionId": "0feff400-1cc5-4665-8119-b558899416cf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3cf0c50ae3f71a41fac6657d2b43c5ae8877d7293b62e24aa8e4a45e8f1c4385"
+  },
+  "id": "gPKfbQkLBBBQAbst",
+  "tags": []
+}
