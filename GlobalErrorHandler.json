@@ -1,0 +1,64 @@
+{
+  "name": "Global Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b0c0298d-ec0c-46bc-88e3-6b74807de77c",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "7992895162",
+        "text": "=💥 **SYSTEM ERROR REPORT** 💥\n\n📁 **Workflow:** {{ $json.workflow.name }} (ID: {{ $json.execution.id }})\n🛑 **Failed Node:** {{ $json.execution.lastNodeExecuted }}\n📅 **Status:** {{ $json.execution.retryOf ? \"Retry failed\" : \"Failed on first attempt\" }}\n\n💬 **Technical Error Message:** `{{ $json.execution.error.message }}`\n\n🛠 Please check the execution logs in the n8n dashboard.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d42026c1-af88-4495-8852-eb6c35381c6f",
+      "name": "Send a text message",
+      "webhookId": "b3827fbf-635f-4347-8415-7157e0048bb1",
+      "credentials": {
+        "telegramApi": {
+          "id": "dfrQtPXXP3Snhupg",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "182570eb-489a-4595-b3fc-fac0d52b039d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3cf0c50ae3f71a41fac6657d2b43c5ae8877d7293b62e24aa8e4a45e8f1c4385"
+  },
+  "id": "2IUr3yxVXwuVbSZi",
+  "tags": []
+}
